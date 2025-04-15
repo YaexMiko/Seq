@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # Replace with your actual bot token
-    TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  
+    TOKEN = "8066028578:AAF7y-f6xryRbK_xUNfV6sjIVilBrVUeBcI"  
 
     # Initialize the Updater and Dispatcher
     updater = Updater(TOKEN, use_context=True)
