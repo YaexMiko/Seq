@@ -6,14 +6,24 @@ from telegram.ext.callbackcontext import CallbackContext
 user_sequences = {}
 
 def start_sequence(update: Update, context: CallbackContext):
+    """
+    Initializes a new file sequencing process for the user.
+    """
     user_id = update.effective_user.id
-    user_sequences[user_id] = []
+    user_sequences[user_id] = []  # Initialize an empty list for the user's file sequence
     update.message.reply_text(
-        "ʏᴏᴜ'ᴠᴇ ꜱᴛᴀʀᴛᴇᴅ ᴀ ꜰɪʟᴇ ꜱᴇǫᴜᴇɴᴄɪɴɢ ᴘʀᴏᴄᴇꜱꜱ. ꜱᴇɴᴅ ᴛʜᴇ ꜰɪʟᴇꜱ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ꜱᴇǫᴜᴇɴᴄᴇ ᴏɴᴇ ʙʏ ᴏɴᴇ.\n\n"
-        "ᴡʜᴇɴ ʏᴏᴜ'ʀᴇ ᴅᴏɴᴇ, ᴜꜱᴇ /endsequence ᴛᴏ ꜰɪɴɪꜱʜ ᴀɴᴅ ɢᴇᴛ ᴛʜᴇ ꜱᴇǫᴜᴇɴᴄᴇᴅ ꜰɪʟᴇꜱ."
+        "You've started a file sequencing process. Send the files you want to sequence one by one.\n\n"
+        "When you're done, use /endsequence to finish and get the sequenced files."
     )
+    logger.info(f"User {user_id} started a new file sequence.")
+
+# Handler for the /startsequence command
+start_sequence_handler = CommandHandler("startsequence", start_sequence)
 
 def handle_file(update: Update, context: CallbackContext):
+    """
+    Adds a file to the user's current file sequence.
+    """
     user_id = update.effective_user.id
     if user_id not in user_sequences:
         update.message.reply_text("Please start a sequence using /startsequence first.")
@@ -30,23 +40,27 @@ def handle_file(update: Update, context: CallbackContext):
             "caption": caption,
             "caption_entities": caption_entities
         })
-        print(f"Stored file: {file.file_name} with caption: {caption}")
         update.message.reply_text(f"File added to sequence: {file.file_name}")
+        logger.info(f"User {user_id} added file {file.file_name} to sequence.")
     else:
         update.message.reply_text("Please send a valid file.")
 
+# Handler for file messages
+handle_file_handler = MessageHandler(Filters.document, handle_file)
+
 def end_sequence(update: Update, context: CallbackContext):
+    """
+    Ends the file sequencing process and sends back the sequenced files.
+    """
     user_id = update.effective_user.id
     if user_id not in user_sequences or not user_sequences[user_id]:
         update.message.reply_text("No sequence to end. Use /startsequence first.")
         return
 
-    files = user_sequences.pop(user_id)
-
+    files = user_sequences.pop(user_id)  # Retrieve and remove the user's file sequence
     update.message.reply_text("Sending your sequenced files now...")
 
     for file_info in files:
-        print(f"Sending file: {file_info['file_name']} with caption: {file_info.get('caption')}")
         try:
             update.message.bot.send_document(
                 chat_id=update.effective_chat.id,
@@ -55,10 +69,10 @@ def end_sequence(update: Update, context: CallbackContext):
                 caption=file_info.get("caption"),
                 caption_entities=file_info.get("caption_entities")
             )
+            logger.info(f"Sent file {file_info['file_name']} with caption: {file_info.get('caption')}")
         except Exception as e:
             update.message.reply_text(f"Failed to send file {file_info['file_name']}: {e}")
+            logger.error(f"Failed to send file {file_info['file_name']}: {e}")
 
-# Handlers to register in dispatcher
-start_sequence = CommandHandler("startsequence", start_sequence)
-end_sequence = CommandHandler("endsequence", end_sequence)
-handle_file = MessageHandler(Filters.document, handle_file)
+# Handler for the /endsequence command
+end_sequence_handler = CommandHandler("endsequence", end_sequence)
