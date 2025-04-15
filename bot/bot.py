@@ -2,7 +2,7 @@ from telegram.ext import Updater
 from bot.handlers import start_sequence, end_sequence, handle_file
 
 def main():
-    TOKEN = "YOUR_BOT_TOKEN"  # Replace with your actual bot token
+    TOKEN = "8066028578:AAE0f8wgbClox9N5Lkh04Cq83w16WNzq8a0"  # Replace with your actual bot token
 
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
