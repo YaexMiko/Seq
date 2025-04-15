@@ -1,6 +1,9 @@
 from telegram.ext import CommandHandler, MessageHandler, Filters
 from telegram import Update
 from telegram.ext.callbackcontext import CallbackContext
+import logging
+
+logger = logging.getLogger(__name__)
 
 # In-memory storage for user file sequences
 user_sequences = {}
@@ -34,14 +37,17 @@ def handle_file(update: Update, context: CallbackContext):
     caption_entities = update.message.caption_entities  # Can be None
 
     if file:
+        # Ensure we have a filename (some files might not have one)
+        file_name = file.file_name or f"file_{len(user_sequences[user_id]) + 1}"
+        
         user_sequences[user_id].append({
             "file_id": file.file_id,
-            "file_name": file.file_name,
+            "file_name": file_name,
             "caption": caption,
             "caption_entities": caption_entities
         })
-        update.message.reply_text(f"File added to sequence: {file.file_name}")
-        logger.info(f"User {user_id} added file {file.file_name} to sequence.")
+        update.message.reply_text(f"File added to sequence: {file_name}")
+        logger.info(f"User {user_id} added file {file_name} to sequence.")
     else:
         update.message.reply_text("Please send a valid file.")
 
@@ -50,7 +56,7 @@ handle_file_handler = MessageHandler(Filters.document, handle_file)
 
 def end_sequence(update: Update, context: CallbackContext):
     """
-    Ends the file sequencing process and sends back the sequenced files.
+    Ends the file sequencing process and sends back the sequenced files with original filenames.
     """
     user_id = update.effective_user.id
     if user_id not in user_sequences or not user_sequences[user_id]:
@@ -58,14 +64,15 @@ def end_sequence(update: Update, context: CallbackContext):
         return
 
     files = user_sequences.pop(user_id)  # Retrieve and remove the user's file sequence
-    update.message.reply_text("Sending your sequenced files now...")
+    update.message.reply_text(f"Sending your {len(files)} sequenced files now...")
 
     for file_info in files:
         try:
-            update.message.bot.send_document(
+            # Send document with original filename
+            context.bot.send_document(
                 chat_id=update.effective_chat.id,
                 document=file_info["file_id"],
-                filename=file_info["file_name"],
+                filename=file_info["file_name"],  # This ensures the original filename is used
                 caption=file_info.get("caption"),
                 caption_entities=file_info.get("caption_entities")
             )
