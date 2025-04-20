@@ -15,8 +15,9 @@ def start_sequence(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     user_sequences[user_id] = []  # Initialize an empty list for the user's file sequence
     update.message.reply_text(
-        "You've started a file sequencing process. Send the files you want to sequence one by one.\n\n"
-        "When you're done, use /endsequence to finish and get the sequenced files."
+        "*You've started a file sequencing process. Send the files you want to sequence one by one.*\n\n"
+        "*When you're done, use /endsequence to finish and get the sequenced files.*",
+        parse_mode="Markdown"
     )
     logger.info(f"User {user_id} started a new file sequence.")
 
@@ -29,7 +30,10 @@ def handle_file(update: Update, context: CallbackContext):
     """
     user_id = update.effective_user.id
     if user_id not in user_sequences:
-        update.message.reply_text("Please start a sequence using /startsequence first.")
+        update.message.reply_text(
+            "*Please start a sequence using /startsequence first.*",
+            parse_mode="Markdown"
+        )
         return
 
     file = update.message.document
@@ -46,40 +50,58 @@ def handle_file(update: Update, context: CallbackContext):
             "caption": caption,
             "caption_entities": caption_entities
         })
-        update.message.reply_text(f"File added to sequence: {file_name}")
+        update.message.reply_text(
+            f"*File added to sequence: {file_name}*",
+            parse_mode="Markdown"
+        )
         logger.info(f"User {user_id} added file {file_name} to sequence.")
     else:
-        update.message.reply_text("Please send a valid file.")
+        update.message.reply_text(
+            "*Please send a valid file.*",
+            parse_mode="Markdown"
+        )
 
 # Handler for file messages
 handle_file_handler = MessageHandler(Filters.document, handle_file)
 
 def end_sequence(update: Update, context: CallbackContext):
     """
-    Ends the file sequencing process and sends back the sequenced files with original filenames.
+    Ends the file sequencing process and sends back the sequenced files with all text in bold.
     """
     user_id = update.effective_user.id
     if user_id not in user_sequences or not user_sequences[user_id]:
-        update.message.reply_text("No sequence to end. Use /startsequence first.")
+        update.message.reply_text(
+            "*No sequence to end. Use /startsequence first.*",
+            parse_mode="Markdown"
+        )
         return
 
     files = user_sequences.pop(user_id)  # Retrieve and remove the user's file sequence
-    update.message.reply_text(f"Sending your {len(files)} sequenced files now...")
+    update.message.reply_text(
+        f"*📁 Sending your {len(files)} sequenced files now...*",
+        parse_mode="Markdown"
+    )
 
     for file_info in files:
         try:
-            # Send document with original filename
+            # Prepare bold caption
+            original_caption = file_info.get('caption', '')
+            bold_caption = f"*{original_caption}*" if original_caption else None
+            
+            # Send document with bold formatting
             context.bot.send_document(
                 chat_id=update.effective_chat.id,
                 document=file_info["file_id"],
-                filename=file_info["file_name"],  # This ensures the original filename is used
-                caption=file_info.get("caption"),
-                caption_entities=file_info.get("caption_entities")
+                filename=file_info["file_name"],
+                caption=bold_caption,
+                caption_entities=file_info.get("caption_entities"),
+                parse_mode="Markdown"  # This enables bold formatting
             )
-            logger.info(f"Sent file {file_info['file_name']} with caption: {file_info.get('caption')}")
+            logger.info(f"Sent file {file_info['file_name']} with bold caption")
         except Exception as e:
-            update.message.reply_text(f"Failed to send file {file_info['file_name']}: {e}")
-            logger.error(f"Failed to send file {file_info['file_name']}: {e}")
+            error_msg = f"*Failed to send file {file_info['file_name']}: {e}*"
+            update.message.reply_text(error_msg, parse_mode="Markdown")
+            logger.error(error_msg)
 
 # Handler for the /endsequence command
 end_sequence_handler = CommandHandler("endsequence", end_sequence)
