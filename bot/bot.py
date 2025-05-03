@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # Replace with your actual bot token
-    TOKEN = "7607446696:AAFK0kWmBoLmsC37wgovRX2Xp0EpB3cDQzs"  
+    TOKEN = "7607446696:AAGonUJAt-jdQar9G8GKHnr3uAMPjKAjluA"  
 
     # Initialize the Updater and Dispatcher
     updater = Updater(TOKEN, use_context=True)
