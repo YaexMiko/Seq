@@ -1,7 +1,8 @@
 import time
 import logging
 from telegram.error import Conflict
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Application, CommandHandler, MessageHandler
+from telegram.ext import filters
 
 # Import handlers from handlers.py
 from bot.handlers import start_sequence_handler, end_sequence_handler, handle_file_handler
@@ -17,24 +18,21 @@ def main():
     # Replace with your actual bot token
     TOKEN = "7607446696:AAGonUJAt-jdQar9G8GKHnr3uAMPjKAjluA"  
 
-    # Initialize the Updater and Dispatcher
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+    # Initialize the Application
+    application = Application.builder().token(TOKEN).build()
 
     # Register handlers
-    dp.add_handler(start_sequence_handler)
-    dp.add_handler(end_sequence_handler)
-    dp.add_handler(handle_file_handler)
+    application.add_handler(start_sequence_handler)
+    application.add_handler(end_sequence_handler)
+    application.add_handler(handle_file_handler)
 
     logger.info("Bot started...")
 
     while True:
         try:
             # Start polling for updates
-            updater.start_polling()
-            # Idle the bot until it is stopped
-            updater.idle()
-            # Break the loop if idle() returns (usually on shutdown)
+            application.run_polling()
+            # Break the loop if run_polling() returns (usually on shutdown)
             break  
         except Conflict as e:
             # Handle conflict errors (e.g., another instance running)
